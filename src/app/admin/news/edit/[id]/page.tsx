@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 const categories = [
   'National',
@@ -22,7 +22,8 @@ interface NewsData {
   isPublished: boolean;
 }
 
-export default function EditNews({ params }: { params: { id: string } }) {
+export default function EditNews() {
+  const params = useParams();
   const router = useRouter();
   const [formData, setFormData] = useState<NewsData>({
     title: '',
@@ -36,12 +37,14 @@ export default function EditNews({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchNewsData();
-  }, []);
+    if (params?.id) {
+      fetchNewsData(params.id as string);
+    }
+  }, [params]);
 
-  const fetchNewsData = async () => {
+  const fetchNewsData = async (id: string) => {
     try {
-      const response = await fetch(`/api/news/${params.id}`);
+      const response = await fetch(`/api/news/${id}`);
       const data = await response.json();
       
       if (!response.ok) {
@@ -63,6 +66,10 @@ export default function EditNews({ params }: { params: { id: string } }) {
     setSaving(true);
 
     try {
+      if (!params?.id) {
+        throw new Error('No article ID provided');
+      }
+
       const response = await fetch(`/api/news/${params.id}`, {
         method: 'PUT',
         headers: {
@@ -71,13 +78,17 @@ export default function EditNews({ params }: { params: { id: string } }) {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error('Failed to update article');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update article');
+      }
 
       router.push('/admin/news');
       router.refresh();
     } catch (error) {
       console.error('Error updating news:', error);
-      alert('Failed to update the article');
+      alert(error instanceof Error ? error.message : 'Failed to update the article');
     } finally {
       setSaving(false);
     }
