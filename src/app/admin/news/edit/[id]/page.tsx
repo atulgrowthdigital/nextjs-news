@@ -44,14 +44,19 @@ export default function EditNews() {
 
   const fetchNewsData = async (id: string) => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/news/${id}`);
-      const data = await response.json();
+      const result = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load the article');
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to load the article');
       }
       
-      setFormData(data);
+      if (!result.data) {
+        throw new Error('No article data received');
+      }
+
+      setFormData(result.data);
     } catch (error) {
       console.error('Error fetching news:', error);
       alert(error instanceof Error ? error.message : 'Failed to load the article');
@@ -78,10 +83,10 @@ export default function EditNews() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update article');
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update article');
       }
 
       router.push('/admin/news');
