@@ -42,12 +42,16 @@ export default function EditNews({ params }: { params: { id: string } }) {
   const fetchNewsData = async () => {
     try {
       const response = await fetch(`/api/news/${params.id}`);
-      if (!response.ok) throw new Error('News not found');
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load the article');
+      }
+      
       setFormData(data);
     } catch (error) {
       console.error('Error fetching news:', error);
-      alert('Failed to load the article');
+      alert(error instanceof Error ? error.message : 'Failed to load the article');
       router.push('/admin/news');
     } finally {
       setLoading(false);
