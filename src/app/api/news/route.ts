@@ -3,18 +3,46 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Test database connection first
+    await prisma.$connect();
+    
     const news = await prisma.news.findMany({
       orderBy: {
         createdAt: 'desc'
       }
     });
-    return NextResponse.json(news);
+
+    if (!news) {
+      return NextResponse.json(
+        { error: 'No news articles found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: news
+    });
   } catch (error) {
     console.error('Error fetching news:', error);
+    
+    // Check for specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('connect')) {
+        return NextResponse.json(
+          { error: 'Database connection failed. Please try again later.' },
+          { status: 503 }
+        );
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Error fetching news articles' },
+      { error: 'Error fetching news articles. Please try again later.' },
       { status: 500 }
     );
+  } finally {
+    // Disconnect after operation
+    await prisma.$disconnect();
   }
 }
 

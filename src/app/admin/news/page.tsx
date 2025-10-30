@@ -22,10 +22,16 @@ export default function ManageNews() {
   const fetchNews = async () => {
     try {
       const response = await fetch('/api/news');
-      const data = await response.json();
-      setNews(data);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch news');
+      }
+
+      setNews(result.data || []);
     } catch (error) {
       console.error('Error fetching news:', error);
+      alert(error instanceof Error ? error.message : 'Failed to fetch news articles');
     } finally {
       setLoading(false);
     }
